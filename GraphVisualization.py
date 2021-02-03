@@ -8,10 +8,21 @@ class PrintableGraph(Graph):
     def __init__(self):
         super().__init__()
 
-    def plot(self):
+    def plot(self, nodes_with_colors={}, colored_edges=[]):
+
         G = nx.Graph()  # this is directed graph
         G.add_edges_from(self.create_edge_list())
-        nx.draw(G,  with_labels=True)
+
+        values = [nodes_with_colors.get(x, 'green') for x in G.nodes()]
+        black_edges = [edge for edge in G.edges() if edge not in colored_edges and (edge[1], edge[0]) not in colored_edges]
+
+        pos = nx.spring_layout(G)
+        nx.draw_networkx_nodes(G, pos, cmap=plt.get_cmap('jet'),
+                               node_color=values, node_size=500)
+        nx.draw_networkx_labels(G, pos)
+        nx.draw_networkx_edges(G, pos, edgelist=colored_edges, edge_color='r')
+        nx.draw_networkx_edges(G, pos, edgelist=black_edges)
+
         plt.show()
 
     def plot_and_mark_node_and_edge(self, node, neighbor):

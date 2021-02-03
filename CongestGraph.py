@@ -49,12 +49,6 @@ class CongestGraph(PrintableGraph):
         else:
             return self.__edge_buffers[edge].read()
 
-    def get_buffer(self, u, v):
-        edge = (min(u, v), max(u, v))
-        if edge not in self.__edge_buffers:
-            return None
-        return self.__edge_buffers[edge]
-
 
 if __name__ == '__main__':
     g = CongestGraph(1)
