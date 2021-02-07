@@ -49,6 +49,11 @@ class CongestGraph(PrintableGraph):
         else:
             return self.__edge_buffers[edge].read()
 
+    def reset(self):
+        super().reset()
+        self.__edge_buffers = {}
+
+
 
 if __name__ == '__main__':
     g = CongestGraph(1)

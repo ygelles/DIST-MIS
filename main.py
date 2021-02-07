@@ -12,6 +12,7 @@ if __name__ == '__main__':
     #g.plot()
     #g.create_random_connected_graph(8, 0.2)
     #g.plot_and_mark_node_and_edge(g.nodes[0], g.nodes[2])
-    generate_MIS_O_N_determenistic(g, True)
+    #generate_MIS_O_N_determenistic(g, False)
+    generate_MIS(g, 3, True)
     validate_MIS(g, False)
     #g.plot()

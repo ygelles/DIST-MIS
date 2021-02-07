@@ -94,6 +94,9 @@ class PrintableGraph(Graph):
 
         return rows
 
+    def reset(self):
+        super().reset()
+        self.pos = None
 
 
     # TODO add more methods

@@ -1,58 +1,77 @@
 from CongestGraph import CongestGraph
 from GraphVisualization import PrintableGraph
+import random
 
 
-def generate_MIS(g : CongestGraph, visualization = False):
-    raise NotImplementedError()
+def execute_round(g : CongestGraph):
+    message_sent = False
+    # send 'active' messages
+    for node in g.nodes:
+        if node.group != 'active':
+            continue
+        message_sent = True
+        for neighbor in node.neighbors:
+            g.send_data(node.id, neighbor, '{}'.format(node.data['id']))
+    # read 'active' messages
+    for node in g.nodes:
+        if node.group != 'active':
+            continue
+        node.data['msg'] = []
+        for neighbor in node.neighbors:
+            data = g.get_data(neighbor, node.id)
+            if data is not None:
+                node.data['msg'].append((int(data), neighbor))
+    # do local compute
+    for node in g.nodes:
+        if node.group != 'active':
+            continue
+        if not node.data['msg'] or (node.data['id'], node.id) > max(node.data['msg']):
+            node.group = 'in'
+            node.data['msg'] = 'should send no to neighbors'
+    # send 'out' messages
+    for node in g.nodes:
+        if node.data['msg'] != 'should send no to neighbors':
+            continue
+        node.data['msg'] = None
+        for neighbor in node.neighbors:
+            g.send_data(node.id, neighbor, 'out')
+    # read 'out' messages
+    for node in g.nodes:
+        if node.group != 'active':
+            continue
+        node.data['msg'] = None
+        for neighbor in node.neighbors:
+            data = g.get_data(neighbor, node.id)
+            if data == 'out':
+                node.group = 'out'
+                break
+    return message_sent
 
-def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
+def generate_MIS(g : CongestGraph, c, visualization = False):
+    upper_limit = len(g.nodes) ** (2 + c)
     message_sent = True
     round_counter = 0
     while message_sent:
         if visualization:
             g.plot(show=False, fps=2)
-        message_sent = False
+        for node in g.nodes:
+            node.data['id'] = random.randint(0, upper_limit)
+        message_sent = execute_round(g)
         round_counter += 1
-        # send 'active' messages
-        for node in g.nodes:
-            if node.group != 'active':
-                continue
-            message_sent = True
-            for neighbor in node.neighbors:
-                g.send_data(node.id, neighbor, 'active')
-        # read 'active' messages
-        for node in g.nodes:
-            if node.group != 'active':
-                continue
-            node.data = []
-            for neighbor in node.neighbors:
-                data = g.get_data(neighbor, node.id)
-                if data == 'active':
-                    node.data.append(neighbor)
-        # do local compute
-        for node in g.nodes:
-            if node.group != 'active':
-                continue
-            if not node.data or node.id > max(node.data):
-                node.group = 'in'
-                node.data = 'should send no to neighbors'
-        # send 'out' messages
-        for node in g.nodes:
-            if node.data != 'should send no to neighbors':
-                continue
-            node.data = None
-            for neighbor in node.neighbors:
-                g.send_data(node.id, neighbor, 'out')
-        # read 'out' messages
-        for node in g.nodes:
-            if node.group != 'active':
-                continue
-            node.data = None
-            for neighbor in node.neighbors:
-                data = g.get_data(neighbor, node.id)
-                if data == 'out':
-                    node.group = 'out'
-                    break
+    print('finished calculate MIS in {} rounds'.format(round_counter))
+    if visualization:
+        g.plot(show=True)
+
+def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
+    for node in g.nodes:
+        node.data['id'] = node.id
+    message_sent = True
+    round_counter = 0
+    while message_sent:
+        if visualization:
+            g.plot(show=False, fps=2)
+        message_sent = execute_round(g)
+        round_counter += 1
     print('finished calculate MIS in {} rounds'.format(round_counter))
     if visualization:
         g.plot(show=True)

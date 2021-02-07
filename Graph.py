@@ -10,7 +10,7 @@ class Node:
         self.id = id
         self.neighbors = set()
         self.group = 'active'
-        self.data = None
+        self.data = {}
 
     def add_neighbor(self, neighbor):
         self.neighbors.add(neighbor)
