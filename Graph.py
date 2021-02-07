@@ -9,7 +9,7 @@ class Node:
     def __init__(self, id):
         self.id = id
         self.neighbors = set()
-        self.group = None
+        self.group = 'active'
         self.data = None
 
     def add_neighbor(self, neighbor):
@@ -21,6 +21,11 @@ class Node:
 
 class Graph:
     def __init__(self):
+        self.nodes = []
+        self.edges = []
+        self.__initiated = False
+
+    def reset(self):
         self.nodes = []
         self.edges = []
         self.__initiated = False

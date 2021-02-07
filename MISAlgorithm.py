@@ -5,7 +5,59 @@ from GraphVisualization import PrintableGraph
 def generate_MIS(g : CongestGraph, visualization = False):
     raise NotImplementedError()
 
-def validate_MIS(g : PrintableGraph, MIS : list, visualization = False):
+def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
+    message_sent = True
+    round_counter = 0
+    while message_sent:
+        message_sent = False
+        round_counter += 1
+        # send 'active' messages
+        for node in g.nodes:
+            if node.group != 'active':
+                continue
+            message_sent = True
+            for neighbor in node.neighbors:
+                g.send_data(node.id, neighbor, 'active')
+        # read 'active' messages
+        for node in g.nodes:
+            if node.group != 'active':
+                continue
+            node.data = []
+            for neighbor in node.neighbors:
+                data = g.get_data(neighbor, node.id)
+                if data == 'active':
+                    node.appdend(neighbor)
+        # do local compute
+        for node in g.nodes:
+            if node.group != 'active':
+                continue
+            if not node.data or node.id > max(node.data):
+                node.group = 'in'
+                node.data = 'should send no to neighbors'
+        # send 'out' messages
+        for node in g.nodes:
+            if node.data != 'should send no to neighbors':
+                continue
+            node.data = None
+            for neighbor in node.neighbors:
+                g.send_data(node.id, neighbor, 'out')
+        # read 'out' messages
+        for node in g.nodes:
+            if node.group != 'active':
+                continue
+            node.data = None
+            for neighbor in node.neighbors:
+                data = g.get_data(neighbor, node.id)
+                if data == 'out':
+                    node.group = 'out'
+                    break
+    print('finished calculate MIS in {} rounds'.format(round_counter))
+
+def validate_MIS(g : PrintableGraph, visualization = False):
+    MIS = []
+    for node in g.nodes:
+        if node.group == 'in':
+            MIS.append(node.id)
     ret_val = True
     colored_edges = []
     nodes_colors = {node: 'yellow' for node in MIS}
