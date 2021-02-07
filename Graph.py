@@ -69,6 +69,14 @@ class Graph:
         self.__initiated = False
         self.create_random_graph(num_of_nodes, probability_to_edge)
 
+    def create_linked_list_graph(self, num_of_nodes):
+        if self.__initiated:
+            raise InitiationError('Graph already initiated')
+        self.add_node(Node(0))
+        for i in range(1, num_of_nodes):
+            self.add_node(Node(i))
+            self.add_edge(i, i - 1)
+
     def create_graph_from_file(self, filename):
         if self.__initiated:
             raise InitiationError('Graph already initiated')

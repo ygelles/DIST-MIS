@@ -9,6 +9,8 @@ def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
     message_sent = True
     round_counter = 0
     while message_sent:
+        if visualization:
+            g.plot(show=False, fps=2)
         message_sent = False
         round_counter += 1
         # send 'active' messages
@@ -26,7 +28,7 @@ def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
             for neighbor in node.neighbors:
                 data = g.get_data(neighbor, node.id)
                 if data == 'active':
-                    node.appdend(neighbor)
+                    node.data.append(neighbor)
         # do local compute
         for node in g.nodes:
             if node.group != 'active':
@@ -52,6 +54,8 @@ def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
                     node.group = 'out'
                     break
     print('finished calculate MIS in {} rounds'.format(round_counter))
+    if visualization:
+        g.plot(show=True)
 
 def validate_MIS(g : PrintableGraph, visualization = False):
     MIS = []
