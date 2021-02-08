@@ -58,9 +58,9 @@ def generate_MIS(g : CongestGraph, c, visualization = False):
             node.data['id'] = random.randint(0, upper_limit)
         message_sent = execute_round(g)
         round_counter += 1
-    print('finished calculate MIS in {} rounds'.format(round_counter))
     if visualization:
         g.plot(show=True)
+    return round_counter
 
 def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
     for node in g.nodes:
