@@ -23,8 +23,8 @@ class Buffer:
 
 
 class CongestGraph(PrintableGraph):
-    def __init__(self, alpha):
-        super().__init__()
+    def __init__(self, alpha, weights = False):
+        super().__init__(weights)
         self.__alpha = alpha
         self.__edge_buffers = {}
 

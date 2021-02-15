@@ -48,6 +48,9 @@ def execute_round(g : CongestGraph):
     return message_sent
 
 def generate_MIS(g : CongestGraph, c, visualization = False):
+    g.round_start()
+    for node in g.nodes:
+        node.group = 'active'
     upper_limit = len(g.nodes) ** (2 + c)
     message_sent = True
     round_counter = 0
@@ -63,8 +66,10 @@ def generate_MIS(g : CongestGraph, c, visualization = False):
     return round_counter
 
 def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
+    g.round_start()
     for node in g.nodes:
         node.data['id'] = node.id
+        node.group = 'active'
     message_sent = True
     round_counter = 0
     while message_sent:

@@ -1,5 +1,6 @@
 import random
 
+WEIGHT_MAX = 5
 
 class InitiationError(Exception):
     pass
@@ -9,7 +10,7 @@ class Node:
     def __init__(self, id):
         self.id = id
         self.neighbors = set()
-        self.group = 'active'
+        self.group = 0
         self.data = {}
 
     def add_neighbor(self, neighbor):
@@ -20,10 +21,11 @@ class Node:
 
 
 class Graph:
-    def __init__(self):
+    def __init__(self, weights = False):
         self.nodes = []
-        self.edges = []
+        self.edges = {}
         self.__initiated = False
+        self.weights = weights
 
     def reset(self):
         self.nodes = []
@@ -37,7 +39,8 @@ class Graph:
     def add_edge(self, u, v):
         edge = (min(u, v), max(u, v))
         if edge not in self.edges:
-            self.edges.append(edge)
+            weight = random.randint(1, WEIGHT_MAX) if self.weights else 1
+            self.edges[edge] = [weight, 'out']
             self.nodes[u].add_neighbor(v)
             self.nodes[v].add_neighbor(u)
 
