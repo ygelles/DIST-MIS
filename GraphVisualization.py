@@ -20,15 +20,8 @@ class PrintableGraph(Graph):
         nodes_with_colors = nodes_with_colors.copy()
         colored_edges = colored_edges.copy()
         if not nodes_with_colors and not colored_edges:
-            for node in self.nodes:
-                if node.group == 'out':
-                    nodes_with_colors[node.id] = 'green'
-                elif node.group == 'in':
-                    nodes_with_colors[node.id] = 'yellow'
-                else: # node.group == 'active'
-                    nodes_with_colors[node.id] = 'blue'
             for edge in self.edges:
-                if self.edges[edge][1] == 'in':
+                if self.edges[edge].status == 'in':
                     colored_edges.append(edge)
 
         G = nx.Graph()  # this is directed graph
@@ -42,14 +35,21 @@ class PrintableGraph(Graph):
             #mng.full_screen_toggle()
 
         if group_to_color:
-            colors = [node.group for node in self.nodes]
+            colors = [node.cluster for node in self.nodes]
         borders = None
-        linewidth = None
+        line_width = None
         if follow_lead_to_border:
-            borders = ['green' if node.data['lead'] else 'red' for node in self.nodes]
-            linewidth = 3
+            borders = []
+            for node in self.nodes:
+                color = 'black'
+                if node.lead == 'Yes':
+                    color = 'green'
+                if node.lead == 'No':
+                    color = 'red'
+                borders.append(color)
+            line_width = 3
         nx.draw_networkx_nodes(G, self.pos, cmap=plt.get_cmap('jet'),vmin=0,vmax=len(G.nodes)-1,
-                               node_color=colors, node_size=500, edgecolors=borders, linewidths=linewidth)
+                               node_color=colors, node_size=500, edgecolors=borders, linewidths=line_width)
         nx.draw_networkx_labels(G, self.pos, font_color='white')
         nx.draw_networkx_edges(G, self.pos, edgelist=colored_edges, edge_color='r')
         nx.draw_networkx_edges(G, self.pos, edgelist=black_edges)
@@ -112,7 +112,7 @@ class PrintableGraph(Graph):
     def create_edge_list(self):
         rows = []
         for edge in self.edges:
-            rows.append([edge[0], edge[1], self.edges[edge][0]])
+            rows.append([edge[0], edge[1], self.edges[edge].weight])
 
         return rows
 

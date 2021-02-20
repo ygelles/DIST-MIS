@@ -10,7 +10,15 @@ class Node:
     def __init__(self, id):
         self.id = id
         self.neighbors = set()
-        self.group = 0
+        self.cluster = id
+        self.bfs_parent = None
+        self.cluster_parent = None
+        self.cluster_leader = True
+        self.lead = None
+        self.bfs_up_queue = []
+        self.bfs_down_queue = []
+        self.cluster_up_queue = []
+        self.cluster_down_queue = []
         self.data = {}
 
     def add_neighbor(self, neighbor):
@@ -20,17 +28,18 @@ class Node:
         return self.id == other.id
 
 
+class Edge:
+    def __init__(self, weight):
+        self.weight = weight
+        self.status = 'out'
+
+
 class Graph:
     def __init__(self, weights = False):
         self.nodes = []
         self.edges = {}
         self.__initiated = False
         self.weights = weights
-
-    def reset(self):
-        self.nodes = []
-        self.edges = []
-        self.__initiated = False
 
     def add_node(self, v):
         if v not in self.nodes:
@@ -40,7 +49,7 @@ class Graph:
         edge = (min(u, v), max(u, v))
         if edge not in self.edges:
             weight = random.randint(1, WEIGHT_MAX) if self.weights else 1
-            self.edges[edge] = [weight, 'out']
+            self.edges[edge] = Edge(weight)
             self.nodes[u].add_neighbor(v)
             self.nodes[v].add_neighbor(u)
 
