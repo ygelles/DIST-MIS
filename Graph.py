@@ -11,15 +11,18 @@ class Node:
         self.id = id
         self.neighbors = set()
         self.cluster = id
+        self.cluster_size = 1
         self.bfs_parent = None
-        self.cluster_parent = None
-        self.cluster_leader = True
+        self.bfs_root = False
+        self.cluster_parent = 'Im (g)root'
         self.lead = None
         self.bfs_up_queue = []
         self.bfs_down_queue = []
         self.cluster_up_queue = []
         self.cluster_down_queue = []
-        self.data = {}
+        self.messages = []
+        self.sub_tree_size = 1
+        self.min_edge = None
 
     def add_neighbor(self, neighbor):
         self.neighbors.add(neighbor)
@@ -27,6 +30,25 @@ class Node:
     def __eq__(self, other):
         return self.id == other.id
 
+    def __str__(self):
+        return 'id: {}\n' \
+               'cluster: {}\n' \
+               'cluster size: {}\n' \
+               'cluster parent: {}\n' \
+               'lead: {}\n' \
+               'up queue: {}\n' \
+               'down queue: {}\n' \
+               'messages: {}\n' \
+               'neighbors: {}\n' \
+               .format(self.id,
+                       self.cluster,
+                       self.cluster_size,
+                       self.cluster_parent,
+                       self.lead,
+                       self.cluster_up_queue,
+                       self.cluster_down_queue,
+                       self.messages,
+                       self.neighbors)
 
 class Edge:
     def __init__(self, weight):
@@ -40,18 +62,27 @@ class Graph:
         self.edges = {}
         self.__initiated = False
         self.weights = weights
+        self.rounds = 0
 
     def add_node(self, v):
         if v not in self.nodes:
             self.nodes.append(v)
 
-    def add_edge(self, u, v):
+    def add_edge(self, u, v, weight=None):
         edge = (min(u, v), max(u, v))
         if edge not in self.edges:
-            weight = random.randint(1, WEIGHT_MAX) if self.weights else 1
-            self.edges[edge] = Edge(weight)
+            w = random.randint(1, WEIGHT_MAX) if self.weights else 1
+            if weight:
+                w = weight
+            self.edges[edge] = Edge(w)
             self.nodes[u].add_neighbor(v)
             self.nodes[v].add_neighbor(u)
+
+    def get_edge(self, u, v):
+        edge = (min(u, v), max(u, v))
+        if edge in self.edges:
+            return self.edges[edge]
+        return None
 
     def create_random_graph(self, num_of_nodes, probability_to_edge):
         if self.__initiated:
@@ -94,16 +125,38 @@ class Graph:
             raise InitiationError('Graph already initiated')
         self.__initiated = True
         with open(filename, 'r') as f:
-            for i, line in enumerate(f):
+            for i, _ in enumerate(f):
                 self.add_node(Node(i))
         with open(filename, 'r') as f:
             for i, line in enumerate(f):
                 for neighbor in line.strip().split():
-                    self.add_edge(i, int(neighbor))
+                    neighbor, w = neighbor.split(',')
+                    self.add_edge(i, int(neighbor), int(w))
 
     def __str__(self):
         return '\n'.join(['Node {} neighbors: {}'.format(node.id, node.neighbors) for node in self.nodes])
 
+    def debug(self):
+        for node in self.nodes:
+            print(str(node))
+
+    def clear_nodes_temp_data(self):
+        for node in self.nodes:
+            node.messages = []
+            node.cluster_up_queue = []
+            node.cluster_down_queue = []
+            node.bfs_up_queue = []
+            node.bfs_down_queue = []
+
+    def get_nodes(self):
+        self.rounds +=1
+        return self.nodes
+
+    def get_node(self, idx):
+        return self.nodes[idx]
+
+    def size(self):
+        return len(self.nodes)
 
 if __name__ == '__main__':
      g = Graph()

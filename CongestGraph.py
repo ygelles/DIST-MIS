@@ -13,6 +13,7 @@ class Buffer:
             return
         if len(data) > self.__buffer_size:
             print('try to write to much data in CONGEST model')
+            raise ValueError()
         else:
             self.__buffer = data
 
@@ -37,14 +38,16 @@ class CongestGraph(PrintableGraph):
     def send_data(self, writer, reader, msg):
         edge = (writer, reader)
         if edge not in self.__edge_buffers:
-            print('edge not exists')
+            print('edge not exists, writer: {}, reader: {}'.format(writer, reader))
+            raise EnvironmentError()
         else:
             self.__edge_buffers[edge].write(msg)
 
     def get_data(self, writer, reader):
         edge = (writer, reader)
         if edge not in self.__edge_buffers:
-            print('edge not exists')
+            print('edge not exists, writer: {}, reader: {}'.format(writer, reader))
+            raise EnvironmentError()
             return None
         else:
             return self.__edge_buffers[edge].read()
@@ -52,6 +55,10 @@ class CongestGraph(PrintableGraph):
     def reset(self):
         super().reset()
         self.__edge_buffers = {}
+
+    def flush_buffers(self):
+        for edge in self.__edge_buffers:
+            self.__edge_buffers[edge].read()
 
 
 

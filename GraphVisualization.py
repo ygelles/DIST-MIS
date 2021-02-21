@@ -8,7 +8,6 @@ class PrintableGraph(Graph):
     def __init__(self, weights = False):
         super().__init__(weights)
         self.pos = None
-        self.round = None
 
     def plot(self,
              nodes_with_colors={},
@@ -16,7 +15,7 @@ class PrintableGraph(Graph):
              show=True,
              fps=3,
              group_to_color=False,
-             follow_lead_to_border= False):
+             follow_lead_to_border=False):
         nodes_with_colors = nodes_with_colors.copy()
         colored_edges = colored_edges.copy()
         if not nodes_with_colors and not colored_edges:
@@ -56,9 +55,8 @@ class PrintableGraph(Graph):
         labels = nx.get_edge_attributes(G, 'weight')
         nx.draw_networkx_edge_labels(G, self.pos, edge_labels=labels)
 
-        if self.round is not None:
-            self.round += 1
-            plt.title('round number {}'.format(self.round))
+        if self.rounds is not None:
+            plt.title('round number {}'.format(self.rounds))
         if show:
             plt.show()
         else:
@@ -119,10 +117,7 @@ class PrintableGraph(Graph):
     def reset(self):
         super().reset()
         self.pos = None
-        self.round = None
 
-    def round_start(self):
-        self.round = 0
 
 
     # TODO add more methods
