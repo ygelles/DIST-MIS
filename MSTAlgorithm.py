@@ -305,7 +305,7 @@ def generate_mst(g: CongestGraph, visualization=False, fps=6):
     assert g.rounds <= start_round + 2 * 8 * round(log2(g.size())) * ((3 * 2 * depth) + 15 + (14 * g.size()))
 
 
-def validate_mst(g: CongestGraph):
+def validate_mst(g: CongestGraph, print_size=True):
     w_calculated = 0
     w_real = 0
     for edge in g.edges:
@@ -323,4 +323,5 @@ def validate_mst(g: CongestGraph):
         nodes[min_edge[1]] = 'in'
         w_real += min_edge[2]
     assert w_real == w_calculated
-    print('MST weight: {}'.format(w_real))
+    if print_size:
+        print('MST weight: {}'.format(w_real))
