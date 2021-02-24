@@ -20,7 +20,8 @@ class Node:
         self.bfs_down_queue = []
         self.cluster_up_queue = []
         self.cluster_down_queue = []
-        self.messages = []
+        self.bfs_messages = []
+        self.cluster_messages = []
         self.sub_tree_size = 1
         self.min_edge = None
 
@@ -38,16 +39,18 @@ class Node:
                'lead: {}\n' \
                'up queue: {}\n' \
                'down queue: {}\n' \
-               'messages: {}\n' \
+               'bfs messages: {}\n' \
+               'cluster messages: {}\n' \
                'neighbors: {}\n' \
                .format(self.id,
                        self.cluster,
                        self.cluster_size,
                        self.cluster_parent,
                        self.lead,
-                       self.cluster_up_queue,
-                       self.cluster_down_queue,
-                       self.messages,
+                       self.bfs_up_queue,
+                       self.bfs_down_queue,
+                       self.bfs_messages,
+                       self.cluster_messages,
                        self.neighbors)
 
 class Edge:
@@ -63,6 +66,8 @@ class Graph:
         self.__initiated = False
         self.weights = weights
         self.rounds = 0
+        self.root = None
+        self.Odiameter = None
 
     def add_node(self, v):
         if v not in self.nodes:
@@ -142,7 +147,8 @@ class Graph:
 
     def clear_nodes_temp_data(self):
         for node in self.nodes:
-            node.messages = []
+            node.bfs_messages = []
+            node.cluster_messages = []
             node.cluster_up_queue = []
             node.cluster_down_queue = []
             node.bfs_up_queue = []
@@ -157,6 +163,9 @@ class Graph:
 
     def size(self):
         return len(self.nodes)
+
+    def get_root(self):
+        return self.nodes[self.root]
 
 if __name__ == '__main__':
      g = Graph()

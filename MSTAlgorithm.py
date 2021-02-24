@@ -29,12 +29,12 @@ def generate_bfs(g: CongestGraph, visualization=False):
                 for neighbor in node.neighbors:
                     if neighbor == node.bfs_parent:
                         continue
-                    g.send_data(node.id, neighbor, msg)
+                    g.send_data(node.id, neighbor, False, msg)
             # update the subtree size
             else:
                 node.sub_tree_size = 1
                 for neighbor in node.neighbors:
-                    data = g.get_data(neighbor, node.id)
+                    data = g.get_data(neighbor, node.id, False)
                     if data is not None:
                         data = data.split()
                         if data[0] == 'size:':
@@ -47,7 +47,7 @@ def generate_bfs(g: CongestGraph, visualization=False):
                 continue
             # node without parent receive message and set the parent
             for neighbor in node.neighbors:
-                data = g.get_data(neighbor, node.id)
+                data = g.get_data(neighbor, node.id, False)
                 if data is not None:
                     data = data.split()
                     if data[0] == 'parent':
@@ -57,10 +57,9 @@ def generate_bfs(g: CongestGraph, visualization=False):
         for node in g.get_nodes():
             # send subtree size to parent
             if node.bfs_parent is not None and not node.bfs_root:
-                g.send_data(node.id, node.bfs_parent, 'size: {}'.format(node.sub_tree_size))
-    depth = (round_counter // 2) + 1
-    assert g.rounds <= start_round + (depth * 2 * 3)
-    return depth
+                g.send_data(node.id, node.bfs_parent, False, 'size: {}'.format(node.sub_tree_size))
+    g.Odiameter = (round_counter // 2) + 1
+    assert g.rounds <= start_round + (g.Odiameter * 2 * 3)
 
 
 # num of rounds is equal to 1 + (n * 2) should be 1 + (constant * sqrt(n))
@@ -83,13 +82,13 @@ def generate_bfs_in_cluster(g: CongestGraph):
                 for neighbor in node.neighbors:
                     if neighbor == node.cluster_parent:
                         continue
-                    g.send_data(node.id, neighbor, msg)
+                    g.send_data(node.id, neighbor, False, msg)
         for node in g.get_nodes():
             if node.cluster_parent is not None:
                 continue
             # node without parent receive message and set the parent
             for neighbor in node.neighbors:
-                data = g.get_data(neighbor, node.id)
+                data = g.get_data(neighbor, node.id, False)
                 if data is not None:
                     data = data.split()
                     if int(data[0]) == node.cluster:
@@ -107,11 +106,11 @@ def find_local_min_edge(g: CongestGraph):
     # send node cluster
     for node in g.get_nodes():
         for neighbor in node.neighbors:
-            g.send_data(node.id, neighbor, '{}'.format(node.cluster))
+            g.send_data(node.id, neighbor, False, '{}'.format(node.cluster))
     # calculate local min edge
     for node in g.get_nodes():
         for neighbor in node.neighbors:
-            data = g.get_data(neighbor, node.id)
+            data = g.get_data(neighbor, node.id, False)
             if data is not None and int(data) != node.cluster:
                 if node.min_edge is None or g.get_edge(node.id, neighbor).weight < node.min_edge[1]:
                     node.min_edge = (neighbor, g.get_edge(node.id, neighbor).weight)
@@ -138,10 +137,10 @@ def send_up_messages_in_cluster(g: CongestGraph):
     # read messages from suns
     for node in g.get_nodes():
         for neighbor in node.neighbors:
-            data = g.get_data(neighbor, node.id)
+            data = g.get_data(neighbor, node.id, False)
             if data is not None:
                 if node.id == node.cluster:
-                    node.messages.append(data)
+                    node.cluster_messages.append(data)
                 else:
                     node.cluster_up_queue.append(data)
     # send message to parent
@@ -150,9 +149,9 @@ def send_up_messages_in_cluster(g: CongestGraph):
             msg = node.cluster_up_queue[0]
             del node.cluster_up_queue[0]
             if node.id == node.cluster:
-                node.messages.append(msg)
+                node.cluster_messages.append(msg)
             else:
-                g.send_data(node.id, node.cluster_parent, msg)
+                g.send_data(node.id, node.cluster_parent, False, msg)
     assert g.rounds <= start_round + 2
 
 
@@ -164,9 +163,9 @@ def send_down_messages_in_cluster(g: CongestGraph):
     for node in g.get_nodes():
         if node.id == node.cluster:
             continue
-        data = g.get_data(node.cluster_parent, node.id)
+        data = g.get_data(node.cluster_parent, node.id, False)
         if data is not None:
-            node.messages.append(data)
+            node.cluster_messages.append(data)
             node.cluster_down_queue.append(data)
     # send messages to suns
     for node in g.get_nodes():
@@ -174,118 +173,230 @@ def send_down_messages_in_cluster(g: CongestGraph):
             msg = node.cluster_down_queue[0]
             del node.cluster_down_queue[0]
             for neighbor in node.neighbors:
-                g.send_data(node.id, neighbor, msg)
+                g.send_data(node.id, neighbor, False, msg)
     assert g.rounds <= start_round + 2
 
 
-# num of rounds is equal to 3 + (4 * n) rounds should be 1 + (constant * sqrt(n) + diameter)
-def share_cluster_min_edge_and_status(g: CongestGraph):
+# only bfs root save the messages
+# num of rounds is equal to 2 rounds
+def send_up_messages_in_bfs(g: CongestGraph):
     start_round = g.rounds
+    # read messages from suns
     for node in g.get_nodes():
-        if node.min_edge is not None:
-            node.cluster_up_queue.append('node: {} min edge: {}'.format(node.id, node.min_edge[1]))
+        for neighbor in node.neighbors:
+            data = g.get_data(neighbor, node.id, True)
+            if data is not None:
+                node.bfs_up_queue.append(data)
+    # send message to parent
+    for node in g.get_nodes():
+        if node.bfs_up_queue:
+            msg = node.bfs_up_queue[0]
+            del node.bfs_up_queue[0]
+            if node.bfs_root:
+                node.bfs_down_queue.append(msg)
+                if int(msg.split()[1]) == node.cluster:
+                    node.bfs_messages.append(msg)
+            else:
+                g.send_data(node.id, node.bfs_parent, True, msg)
+    assert g.rounds <= start_round + 2
+
+
+# all nodes save messages
+# num of rounds is equal to 2 rounds
+def send_down_messages_in_bfs(g: CongestGraph):
+    start_round = g.rounds
+    # read message from parent
+    for node in g.get_nodes():
+        if node.bfs_root:
+            continue
+        data = g.get_data(node.bfs_parent, node.id, True)
+        if data is not None:
+            if int(data.split()[1]) == node.cluster:
+                node.bfs_messages.append(data)
+            node.bfs_down_queue.append(data)
+    # send messages to suns
+    for node in g.get_nodes():
+        if node.bfs_down_queue:
+            msg = node.bfs_down_queue[0]
+            del node.bfs_down_queue[0]
+            for neighbor in node.neighbors:
+                g.send_data(node.id, neighbor, True, msg)
+    assert g.rounds <= start_round + 2
+
+
+# num of rounds is equal to 5 * 2 * n
+def send_messages_to_cluster_leader(g: CongestGraph):
+    start_round = g.rounds
+    # throw cluster
     g.flush_buffers()
     for _ in range(g.size()):  # TODO should change to sqrt g.nodes
         send_up_messages_in_cluster(g)
     g.flush_buffers()
-    # calculate cluster min edge
-    for node in g.get_nodes():
-        if node.id == node.cluster:
-            min_edge = None
-            for msg in node.messages:
-                _, m_node, _, _, weight = msg.split()
-                if min_edge is None or int(weight) < min_edge[1]:
-                    min_edge = (m_node, int(weight))
-            if min_edge is None:
-                assert g.rounds <= start_round + 3 + (4 * g.size())
-                return True
-            node.cluster_down_queue.append('status: {} node: {}'.format(node.lead, min_edge[0]))
-            node.messages = [node.cluster_down_queue[-1]]
+
+    # throw bfs
+    g.flush_buffers()
+    for _ in range(g.size() * 2):  # TODO should change to diameter
+        send_up_messages_in_bfs(g)
+    g.flush_buffers()
+    for _ in range(g.size() * 2):  # TODO should change to diameter
+        send_down_messages_in_bfs(g)
+    g.flush_buffers()
+    assert g.rounds <= start_round + 5 * 2 * g.size()
+
+
+# num of rounds is equal to 5 * 2 * n
+def send_messages_from_cluster_leader(g: CongestGraph):
+    start_round = g.rounds
+    # throw cluster
     g.flush_buffers()
     for _ in range(g.size()):  # TODO should change to sqrt g.nodes
         send_down_messages_in_cluster(g)
     g.flush_buffers()
+
+    # throw bfs
+    g.flush_buffers()
+    for _ in range(g.size() * 2):  # TODO should change to diameter
+        send_up_messages_in_bfs(g)
+    g.flush_buffers()
+    for _ in range(g.size() * 2):  # TODO should change to diameter
+        send_down_messages_in_bfs(g)
+    g.flush_buffers()
+    assert g.rounds <= start_round + 5 * 2 * g.size()
+
+
+# num of rounds is equal to  3 + (2 * (5 * 2 * n)) rounds should be 1 + (constant * sqrt(n) + diameter)
+def share_cluster_min_edge_and_status(g: CongestGraph):
+    start_round = g.rounds
     for node in g.get_nodes():
-        _, status, _, m_node = node.messages[0].split()
-        del node.messages[0]
-        node.lead = status
-        if int(m_node) != node.id:
-            node.min_edge = None
-    assert g.rounds <= start_round + 3 + (4 * g.size())
+        if node.min_edge is not None:
+            if node.bfs_root:
+                node.bfs_down_queue.append('cluster: {} node: {} min edge: {}'.format(node.cluster, node.id, node.min_edge[1]))
+                node.bfs_messages.append('cluster: {} node: {} min edge: {}'.format(node.cluster, node.id, node.min_edge[1]))
+            else:
+                node.bfs_up_queue.append('cluster: {} node: {} min edge: {}'.format(node.cluster, node.id, node.min_edge[1]))
+    send_messages_to_cluster_leader(g)
+    # calculate cluster min edge
+    for node in g.get_nodes():
+        if node.id == node.cluster:
+            min_edge = None
+            for msg in node.bfs_messages:
+                _, cluster, _, m_node, _, _, weight = msg.split()
+                if int(cluster) != node.cluster:
+                    continue
+                if min_edge is None or int(weight) < min_edge[1]:
+                    min_edge = (m_node, int(weight))
+            if min_edge is None:
+                #assert g.rounds <= start_round + 3 + (4 * g.size())
+                return True
+            if node.bfs_root:
+                node.bfs_down_queue.append('cluster: {} status: {} node: {}'.format(node.cluster, node.lead, min_edge[0]))
+                node.bfs_messages.append('cluster: {} status: {} node: {}'.format(node.cluster, node.lead, min_edge[0]))
+            else:
+                node.bfs_up_queue.append('cluster: {} status: {} node: {}'.format(node.cluster, node.lead, min_edge[0]))
+            node.bfs_messages = ['cluster: {} status: {} node: {}'.format(node.cluster, node.lead, min_edge[0])]
+        else:
+            node.bfs_messages = []
+    send_messages_from_cluster_leader(g)
+    for node in g.get_nodes():
+        while node.bfs_messages:
+            msg = node.bfs_messages[0]
+            del node.bfs_messages[0]
+            if msg.find('status') != -1:
+                _, cluster, _, status, _, m_node = msg.split()
+                if int(cluster) == node.cluster:
+                    node.lead = status
+                    if int(m_node) != node.id:
+                        node.min_edge = None
+    assert g.rounds <= start_round + 3 + (2 * (5 * 2 * g.size()))
     return False
 
 
-# num of rounds is equal to 7 + (8 * n) rounds should be 1 + (constant * sqrt(n) + diameter)
+# num of rounds is equal to 7 + (4 * (5 * 2 * n)) rounds should be 1 + (constant * sqrt(n) + diameter)
 def merge_clusters(g: CongestGraph):
     start_round = g.rounds
     g.flush_buffers()
     for node in g.get_nodes():
         if node.min_edge is not None and node.lead == 'No':
-            g.send_data(node.id, node.min_edge[0], 'I want to merge, cluster size: {}'.format(node.cluster_size))
+            g.send_data(node.id, node.min_edge[0], False, 'I want to merge, cluster size: {}'.format(node.cluster_size))
     for node in g.get_nodes():
         for neighbor in node.neighbors:
-            data = g.get_data(neighbor, node.id)
+            data = g.get_data(neighbor, node.id, False)
             if data is not None and node.lead == 'Yes':
                 cluster_size = data.split()[-1]
-                node.cluster_up_queue.append('cluster size: {}'.format(cluster_size))
-    g.flush_buffers()
-    for _ in range(g.size()):  # TODO should change to sqrt g.nodes
-        send_up_messages_in_cluster(g)
-    g.flush_buffers()
+                if node.bfs_root:
+                    node.bfs_down_queue.append('cluster: {} cluster size: {}'.format(node.cluster, cluster_size))
+                    node.bfs_messages.append('cluster: {} cluster size: {}'.format(node.cluster, cluster_size))
+                else:
+                    node.bfs_up_queue.append('cluster: {} cluster size: {}'.format(node.cluster, cluster_size))
+    send_messages_to_cluster_leader(g)
     # calculate new cluster size
     for node in g.get_nodes():
         if node.id == node.cluster and node.lead == 'Yes':
-            for msg in node.messages:
+            for msg in node.bfs_messages:
                 node.cluster_size += int(msg.split()[-1])
-            node.cluster_down_queue.append('new cluster size: {}'.format(node.cluster_size))
-            node.messages = [node.cluster_down_queue[-1]]
-    g.flush_buffers()
-    for _ in range(g.size()):  # TODO should change to sqrt g.nodes
-        send_down_messages_in_cluster(g)
-    g.flush_buffers()
+            if node.bfs_root:
+                node.bfs_down_queue.append('cluster: {} new cluster size: {}'.format(node.cluster, node.cluster_size))
+            else:
+                node.bfs_up_queue.append('cluster: {} new cluster size: {}'.format(node.cluster, node.cluster_size))
+            node.bfs_messages = ['cluster: {} new cluster size: {}'.format(node.cluster, node.cluster_size)]
+    send_messages_from_cluster_leader(g)
     for node in g.get_nodes():
-        if node.lead == 'No':
+        if node.lead != 'Yes':
             continue
-        node.cluster_size = int(node.messages[0].split()[-1])
-        del node.messages[0]
+        if not node.bfs_messages:
+            print(node)
+        node.cluster_size = int(node.bfs_messages[0].split()[-1])
+        del node.bfs_messages[0]
         for neighbor in node.neighbors:
-            g.send_data(node.id, neighbor, 'cluster leader: {} cluster size: {}'.format(node.cluster, node.cluster_size))
+            g.send_data(node.id, neighbor, True, 'cluster leader: {} cluster size: {}'.format(node.cluster, node.cluster_size))
     for node in g.get_nodes():
         if node.min_edge is not None and node.lead == 'No':
-            data = g.get_data(node.min_edge[0], node.id)
+            data = g.get_data(node.min_edge[0], node.id, True)
             if data is not None:
-                node.cluster_up_queue.append(data)
+                if node.bfs_root:
+                    node.bfs_down_queue.append('cluster: {} {}'.format(node.cluster, data))
+                    node.bfs_messages.append('cluster: {} {}'.format(node.cluster, data))
+                else:
+                    node.bfs_up_queue.append('cluster: {} {}'.format(node.cluster, data))
                 g.get_edge(node.id, node.min_edge[0]).status = 'in'
-    g.flush_buffers()
-    for _ in range(g.size()):  # TODO should change to sqrt g.nodes
-        send_up_messages_in_cluster(g)
-    g.flush_buffers()
+    send_messages_to_cluster_leader(g)
     for node in g.get_nodes():
-        if node.id == node.cluster and node.lead == 'No' and node.messages:
-            msg = node.messages[0]
-            node.cluster_down_queue.append(msg)
-            node.messages = [node.cluster_down_queue[-1]]
-    g.flush_buffers()
-    for _ in range(g.size()):  # TODO should change to sqrt g.nodes
-        send_down_messages_in_cluster(g)
-    g.flush_buffers()
+        if node.id == node.cluster and node.lead == 'No':
+            msg = None
+            while node.bfs_messages:
+                msg = node.bfs_messages[0]
+                del node.bfs_messages[0]
+                if int(msg.split()[1]) == node.cluster and msg.find('cluster leader') != -1:
+                    break
+            if msg:
+                node.bfs_messages = [msg]
+                if node.bfs_root:
+                    node.bfs_down_queue.append(msg)
+                else:
+                    node.bfs_up_queue.append(msg)
+
+    send_messages_from_cluster_leader(g)
     for node in g.get_nodes():
-        if node.messages:
-            _, _, new_cluster, _, _, new_size = node.messages[0].split()
-            del node.messages[0]
-            node.cluster = int(new_cluster)
-            node.cluster_size = int(new_size)
-    assert g.rounds <= start_round + 7 + (8 * g.size())
+        while node.bfs_messages:
+            msg = node.bfs_messages[0]
+            del node.bfs_messages[0]
+            if msg.find('cluster leader') == -1:
+                continue
+            _, cluster, _, _, new_cluster, _, _, new_size = msg.split()
+            if int(cluster) == node.cluster:
+                node.cluster = int(new_cluster)
+                node.cluster_size = int(new_size)
+    assert g.rounds <= start_round + 7 + (4 * (5 * 2 * g.size()))
 
 
 # num of rounds is expected to be less then to 8 * (log2(n)) * ((3 * 2 * depth) + 15 + (14 * n)) should replace the last n with sqrt(n)
 def generate_mst(g: CongestGraph, visualization=False, fps=6):
     start_round = g.rounds
-    root = 0  # may randomize
-    g.get_node(root).bfs_root = True
-    g.get_node(root).bfs_parent = 'Im (g)root'
-    g.get_node(root).bfs_down_queue.append('parent')
-    depth = generate_bfs(g, visualization=visualization)  # 3 * 2 * depth
+    g.root = 0  # may randomize
+    g.get_node(g.root).bfs_root = True
+    g.get_node(g.root).bfs_parent = 'Im (g)root'
+    g.get_node(g.root).bfs_down_queue.append('parent')
+    generate_bfs(g, visualization=False)  # 3 * 2 * depth
     for edge in g.edges:
         g.edges[edge].status = 'out'
     while True:
@@ -295,14 +406,14 @@ def generate_mst(g: CongestGraph, visualization=False, fps=6):
         choose_lead_status(g)  # num of rounds is equal to 1 rounds
         if visualization:
             g.plot(show=False, fps=fps, group_to_color=True, follow_lead_to_border=True)
-        if share_cluster_min_edge_and_status(g):  # num of rounds is equal to 3 + (4 * n) rounds
+        if share_cluster_min_edge_and_status(g):  # num of rounds is equal to 3 + (2 * (5 * 2 * n)) rounds
             break
+        merge_clusters(g)  # num of rounds is equal to 7 + (4 * (5 * 2 * n)) rounds
         if visualization:
             g.plot(show=False, fps=fps, group_to_color=True, follow_lead_to_border=True)
-        merge_clusters(g)
     if visualization:
-        g.plot(show=True, group_to_color=True)  # num of rounds is equal to 7 + (8 * n) rounds
-    assert g.rounds <= start_round + 2 * 8 * round(log2(g.size())) * ((3 * 2 * depth) + 15 + (14 * g.size()))
+        g.plot(show=True, group_to_color=True)
+    assert g.rounds <= start_round + 2 * 8 * round(log2(g.size())) * ((3 * 2 * g.Odiameter) + 15 + (62 * g.size()))
 
 
 def validate_mst(g: CongestGraph, print_size=True):

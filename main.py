@@ -4,11 +4,12 @@ from CongestGraph import CongestGraph
 from MSTAlgorithm import *
 
 if __name__ == '__main__':
-    graph_size = 10
+    graph_size = 33
     expected_neighbors = 2
-    g = CongestGraph(12, weights=True)
+    g = CongestGraph(30, weights=True)
     g.create_random_connected_graph(graph_size, expected_neighbors / graph_size)
     #g.create_linked_list_graph(10)
+    #g.create_graph_from_file('demo_graph_basic.txt')
     #g.create_graph_from_file('demo_graph.txt')
     g.create_buffers()
     #g.plot()

@@ -24,6 +24,8 @@ class PrintableGraph(Graph):
                     colored_edges.append(edge)
 
         G = nx.Graph()  # this is directed graph
+        for node in self.nodes:
+            G.add_node(node.id)
         G.add_weighted_edges_from(self.create_edge_list())
 
         colors = [nodes_with_colors.get(x, 'green') for x in G.nodes()]
