@@ -49,6 +49,7 @@ class CongestGraph(PrintableGraph):
         edge = (writer, reader, bfs)
         if edge not in self.__edge_buffers:
             print('edge not exists, writer: {}, reader: {}'.format(writer, reader))
+            self.debug()
             raise ValueError()
         else:
             return self.__edge_buffers[edge].read()

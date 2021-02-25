@@ -20,8 +20,7 @@ class Node:
         self.bfs_down_queue = []
         self.cluster_up_queue = []
         self.cluster_down_queue = []
-        self.bfs_messages = []
-        self.cluster_messages = []
+        self.messages = []
         self.sub_tree_size = 1
         self.min_edge = None
 
@@ -40,7 +39,6 @@ class Node:
                'up queue: {}\n' \
                'down queue: {}\n' \
                'bfs messages: {}\n' \
-               'cluster messages: {}\n' \
                'neighbors: {}\n' \
                .format(self.id,
                        self.cluster,
@@ -49,8 +47,7 @@ class Node:
                        self.lead,
                        self.bfs_up_queue,
                        self.bfs_down_queue,
-                       self.bfs_messages,
-                       self.cluster_messages,
+                       self.messages,
                        self.neighbors)
 
 class Edge:
@@ -147,7 +144,7 @@ class Graph:
 
     def clear_nodes_temp_data(self):
         for node in self.nodes:
-            node.bfs_messages = []
+            node.messages = []
             node.cluster_messages = []
             node.cluster_up_queue = []
             node.cluster_down_queue = []
