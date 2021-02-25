@@ -6,50 +6,49 @@ import random
 def execute_round(g : CongestGraph):
     message_sent = False
     # send 'active' messages
-    for node in g.nodes:
+    for node in g.get_nodes():
         if node.group != 'active':
             continue
         message_sent = True
         for neighbor in node.neighbors:
-            g.send_data(node.id, neighbor, '{}'.format(node.data['id']))
+            g.send_data(node.id, neighbor, False, '{}'.format(node.cluster))
     # read 'active' messages
-    for node in g.nodes:
+    for node in g.get_nodes():
         if node.group != 'active':
             continue
-        node.data['msg'] = []
+        node.messages = []
         for neighbor in node.neighbors:
-            data = g.get_data(neighbor, node.id)
+            data = g.get_data(neighbor, node.id, False)
             if data is not None:
-                node.data['msg'].append((int(data), neighbor))
+                node.messages.append((int(data), neighbor))
     # do local compute
-    for node in g.nodes:
+    for node in g.get_nodes():
         if node.group != 'active':
             continue
-        if not node.data['msg'] or (node.data['id'], node.id) > max(node.data['msg']):
+        if not node.messages or (node.cluster, node.id) > max(node.messages):
             node.group = 'in'
-            node.data['msg'] = 'should send no to neighbors'
+            node.messages = 'should send no to neighbors'
     # send 'out' messages
-    for node in g.nodes:
-        if node.data['msg'] != 'should send no to neighbors':
+    for node in g.get_nodes():
+        if node.messages != 'should send no to neighbors':
             continue
-        node.data['msg'] = None
+        node.messages = None
         for neighbor in node.neighbors:
-            g.send_data(node.id, neighbor, 'out')
+            g.send_data(node.id, neighbor, False, 'out')
     # read 'out' messages
-    for node in g.nodes:
+    for node in g.get_nodes():
         if node.group != 'active':
             continue
-        node.data['msg'] = None
+        node.messages = None
         for neighbor in node.neighbors:
-            data = g.get_data(neighbor, node.id)
+            data = g.get_data(neighbor, node.id, False)
             if data == 'out':
                 node.group = 'out'
                 break
     return message_sent
 
 def generate_MIS(g : CongestGraph, c, visualization = False):
-    g.round_start()
-    for node in g.nodes:
+    for node in g.get_nodes():
         node.group = 'active'
     upper_limit = len(g.nodes) ** (2 + c)
     message_sent = True
@@ -57,8 +56,8 @@ def generate_MIS(g : CongestGraph, c, visualization = False):
     while message_sent:
         if visualization:
             g.plot(show=False, fps=2)
-        for node in g.nodes:
-            node.data['id'] = random.randint(0, upper_limit)
+        for node in g.get_nodes():
+            node.cluster = random.randint(0, upper_limit)
         message_sent = execute_round(g)
         round_counter += 1
     if visualization:
@@ -66,9 +65,8 @@ def generate_MIS(g : CongestGraph, c, visualization = False):
     return round_counter
 
 def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
-    g.round_start()
-    for node in g.nodes:
-        node.data['id'] = node.id
+    for node in g.get_nodes():
+        node.cluster = node.id
         node.group = 'active'
     message_sent = True
     round_counter = 0
@@ -83,7 +81,7 @@ def generate_MIS_O_N_determenistic(g : CongestGraph, visualization = False):
 
 def validate_MIS(g : PrintableGraph, visualization = False):
     MIS = []
-    for node in g.nodes:
+    for node in g.get_nodes():
         if node.group == 'in':
             MIS.append(node.id)
     ret_val = True

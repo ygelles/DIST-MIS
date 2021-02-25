@@ -19,6 +19,11 @@ class PrintableGraph(Graph):
         nodes_with_colors = nodes_with_colors.copy()
         colored_edges = colored_edges.copy()
         if not nodes_with_colors and not colored_edges:
+            for node in self.nodes:
+                if node.group == 'in':
+                    nodes_with_colors[node.id] = 'yellow'
+                if node.group == 'out':
+                    nodes_with_colors[node.id] = 'blue'
             for edge in self.edges:
                 if self.edges[edge].status == 'in':
                     colored_edges.append(edge)

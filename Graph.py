@@ -9,6 +9,7 @@ class InitiationError(Exception):
 class Node:
     def __init__(self, id):
         self.id = id
+        self.group = 'active'
         self.neighbors = set()
         self.cluster = id
         self.cluster_size = 1

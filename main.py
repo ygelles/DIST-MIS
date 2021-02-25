@@ -2,24 +2,41 @@ from Graph import Graph
 from GraphVisualization import PrintableGraph
 from CongestGraph import CongestGraph
 from MSTAlgorithm import *
+from MISAlgorithm import *
 
-if __name__ == '__main__':
-    graph_size = 33
+def interactive_shell():
+    graph_size = 10
     expected_neighbors = 2
     g = CongestGraph(30, weights=True)
-    #g.create_random_connected_graph(graph_size, expected_neighbors / graph_size)
-    g.create_linked_list_graph(4)
-    #g.create_graph_from_file('demo_graph_basic.txt')
-    #g.create_graph_from_file('demo_graph.txt')
-    g.create_buffers()
-    #g.plot()
-    #g.create_random_connected_graph(8, 0.2)
-    #g.plot_and_mark_node_and_edge(g.nodes[0], g.nodes[2])
-    #generate_MIS_O_N_determenistic(g, False)
-    generate_mst(g, True, fps=5)
-    validate_mst(g)
-    #generate_MIS(g, 3, True)
-    #validate_MIS(g, False)
-    #input('press enter:')
-    #g.plot(group_to_color=True, follow_lead_to_border=True)
+    while True:
+        cmd = input('$ ').split()
+        if cmd[0] == 'size':
+            graph_size = int(cmd[1])
+        if cmd[0] == 'neighbors':
+            expected_neighbors = int(cmd[1])
+        if cmd[0] == 'list':
+            g = CongestGraph(30, weights=True)
+            g.create_linked_list_graph(graph_size)
+            g.create_buffers()
+        if cmd[0] == 'tree':
+            g = CongestGraph(30, weights=True)
+            g.create_random_spanning_tree(graph_size)
+            g.create_buffers()
+        if cmd[0] == 'random':
+            g = CongestGraph(30, weights=True)
+            g.create_random_connected_graph(graph_size, expected_neighbors / graph_size)
+            g.create_buffers()
+        if cmd[0] == 'MIS':
+            generate_MIS(g, 3, bool(cmd[1]))
+            validate_MIS(g, False)
+        if cmd[0] == 'MST':
+            generate_mst(g, bool(cmd[1]), fps=2)
+            validate_mst(g, True)
+        if cmd[0] == 'plot':
+            g.plot()
+        if cmd[0] == 'exit':
+            break
+
+if __name__ == '__main__':
+    interactive_shell()
 

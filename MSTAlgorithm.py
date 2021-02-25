@@ -421,7 +421,7 @@ def generate_mst(g: CongestGraph, visualization=False, fps=6):
     g.get_node(g.root).bfs_root = True
     g.get_node(g.root).bfs_parent = 'Im (g)root'
     g.get_node(g.root).bfs_down_queue.append('parent')
-    generate_bfs(g, visualization=False)  # 6 * O(diameter)
+    generate_bfs(g, visualization=visualization)  # 6 * O(diameter)
     for edge in g.edges:
         g.edges[edge].status = 'out'
     while True:
