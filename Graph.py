@@ -1,6 +1,6 @@
 import random
 
-WEIGHT_MAX = 5
+WEIGHT_MAX = 50
 
 class InitiationError(Exception):
     pass

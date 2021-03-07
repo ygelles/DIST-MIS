@@ -62,8 +62,8 @@ class PrintableGraph(Graph):
         labels = nx.get_edge_attributes(G, 'weight')
         nx.draw_networkx_edge_labels(G, self.pos, edge_labels=labels)
 
-        if self.rounds is not None:
-            plt.title('round number {}'.format(self.rounds))
+        # if self.rounds is not None:
+            # plt.title('round number {}'.format(self.rounds))
         if show:
             plt.show()
         else:
