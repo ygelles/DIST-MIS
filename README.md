@@ -34,6 +34,7 @@
 
 ### init the clusters
 each color represent cluster
+
 border colors:
 * green -> leader
 * red -> follower
