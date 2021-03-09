@@ -23,8 +23,59 @@
 
 ## example with visualization:
 
+### choose the root (node 0)
 ![BFS stage 0](/images/BFS_0.PNG)
 
+### create the BFS stage #1
 ![BFS stage 1](/images/BFS_1.PNG)
 
-![BFS stage 2](/images/BFS_0.PNG)
+### create the BFS stage #2
+![BFS stage 2](/images/BFS_2.PNG)
+
+### init the clusters
+each color represent cluster
+border colors:
+* green -> leader
+* red -> follower
+* black -> I don't know yet
+
+![MST stage 0](/images/MST_0.PNG)
+
+### create the MST stage #1
+![MST stage 1](/images/MST_1.PNG)
+
+### create the MST stage #2
+![MST stage 2](/images/MST_2.PNG)
+
+### create the MST stage #3
+![MST stage 3](/images/MST_3.PNG)
+
+### create the MST stage #4
+![MST stage 4](/images/MST_4.PNG)
+
+### create the MST stage #5
+![MST stage 5](/images/MST_5.PNG)
+
+## execute command
+
+by run main.py it's start interactive shell that support:
+
+Command   | Argument     | Description
+--------- | ------------ | -----------
+size      | *NUMBER*     | set the size of graph
+neighbors | *NUMBER*     | set the expected neighbors in random graph
+tree      | ------------ | create a random tree
+list      | ------------ | create "snake" graph
+random    | ------------ | create random connected graph
+MIS       | *True/False* | generate and validate MIS in the graph, the argument is enable the visualization
+MST       | *True/False* | generate and validate MST in the graph, the argument is enable the visualization
+plot      | ------------ | show the graph
+exit      | ------------ | exit from the program
+
+the example in this file can be generated with:
+1. size 15
+1. neighbor 2
+1. random
+1. MST True
+
+there are also record of examples in [/images/record.mp4](/images/record.mp4)
