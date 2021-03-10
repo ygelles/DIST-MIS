@@ -238,12 +238,10 @@ def send_down_messages_in_bfs(g: CongestGraph):
             del node.bfs_down_queue[0]
             for neighbor in node.neighbors:
                 g.send_data(node.id, neighbor, BFS, msg)
-            if int(msg.split()[1]) == node.cluster and node.bfs_root:
-                node.messages.append(msg)
     assert g.rounds <= start_round + 2
 
 
-# 12 * sqrt(n) + 8 * O(diameter)
+# 20 * sqrt(n) + 16 * O(diameter)
 def send_messages_to_cluster_leader(g: CongestGraph):
     start_round = g.rounds
     # throw cluster
@@ -257,10 +255,10 @@ def send_messages_to_cluster_leader(g: CongestGraph):
     for _ in range(4 * (isqrt(g.size()) + g.Odiameter)):
         send_up_messages_in_bfs(g)
     g.flush_buffers()
-    assert g.rounds <= start_round + 12 * isqrt(g.size()) + 8 * g.Odiameter
+    assert g.rounds <= start_round + 20 * isqrt(g.size()) + 16 * g.Odiameter
 
 
-# 12 * sqrt(n) + 8 * O(diameter)
+# 20 * sqrt(n) + 16 * O(diameter)
 def send_messages_from_cluster_leader(g: CongestGraph):
     start_round = g.rounds
     # throw cluster
@@ -287,7 +285,6 @@ def add_message_to_up_queue(g: CongestGraph, node: Node, msg: str):
         if node.bfs_root:
             node.bfs_down_queue.append(msg)
             node.messages.append(msg)
-            node.bfs_root_messages.append(msg)
         else:
             node.bfs_up_queue.append(msg)
 
@@ -299,12 +296,11 @@ def add_message_to_down_queue(g: CongestGraph, node: Node, msg: str):
         if node.bfs_root:
             node.bfs_down_queue.append(msg)
             node.messages.append(msg)
-            node.bfs_root_messages.append(msg)
         else:
             node.bfs_up_queue.append(msg)
 
 
-# 3 + 2 * (12 * sqrt(n) + 8 * O(diameter)) rounds
+# 3 + 2 * (20 * sqrt(n) + 16 * O(diameter)) rounds
 def share_cluster_min_edge_and_status(g: CongestGraph):
     start_round = g.rounds
     for node in g.get_nodes():
@@ -343,6 +339,8 @@ def share_cluster_min_edge_and_status(g: CongestGraph):
         if lead in ['Yes', 'No']:
             root.status[cluster] = lead
     for cluster in min_edges:
+        print(root.status)
+        print(min_edges)
         msg = 'cluster: {} status: {} node: {}'.format(cluster, root.status[cluster], min_edges[cluster][0])
         root.bfs_down_queue.append(msg)
     root.bfs_root_messages = []
@@ -357,12 +355,11 @@ def share_cluster_min_edge_and_status(g: CongestGraph):
                     node.lead = status
                     if int(m_node) != node.id:
                         node.min_edge = None
-    assert g.rounds <= start_round + 3 + 2 * (12 * isqrt(g.size()) + 8 * g.Odiameter)
+    assert g.rounds <= start_round + 3 + 2 * (20 * isqrt(g.size()) + 16 * g.Odiameter)
 
 
-# 7 + 4 * (12 * sqrt(n) + 8 * O(diameter)) rounds
+# 7 + 4 * (20 * sqrt(n) + 16 * O(diameter)) rounds
 def merge_clusters(g: CongestGraph):
-    done = False
     g.clear_nodes_temp_data()
     start_round = g.rounds
     g.flush_buffers()
@@ -403,10 +400,8 @@ def merge_clusters(g: CongestGraph):
     for node in g.get_nodes():
         if node.lead != 'Yes':
             continue
-        if node.messages:
-            node.cluster_size += int(node.messages[-1].split()[-1])
-        if node.cluster_size == g.size():
-            done = True
+        g.debug()
+        node.cluster_size += int(node.messages[-1].split()[-1])
         node.messages = []
         for neighbor in node.neighbors:
             g.send_data(node.id, neighbor, DONT_CARE,
@@ -449,12 +444,11 @@ def merge_clusters(g: CongestGraph):
                 node.cluster_size = int(new_size)
                 node.messages = []
                 break
-    assert g.rounds <= start_round + 7 + 4 * (12 * isqrt(g.size()) + 8 * g.Odiameter)
-    return done
+    assert g.rounds <= start_round + 7 + 4 * (20 * isqrt(g.size()) + 16 * g.Odiameter)
 
 
-# measured factor is 2.106828418057238
-# num of rounds is expected to be less then to (factor)8 * (log2(n)) * (17 + 54 * O(diameter) + 76 * sqrt(n))
+# measured factor is 2.0531687405739705
+# num of rounds is expected to be less then to (factor)8 * (log2(n)) * (17 + 102 * O(diameter) + 124 * sqrt(n))
 def generate_mst(g: CongestGraph, visualization=False, fps=0.5):
     start_round = g.rounds
     g.root = 0  # may randomize
@@ -471,15 +465,15 @@ def generate_mst(g: CongestGraph, visualization=False, fps=0.5):
         choose_lead_status(g)  # 1 rounds
         if visualization:
             g.plot(show=False, fps=fps, group_to_color=True, follow_lead_to_border=True)
-        share_cluster_min_edge_and_status(g)  # 3 + 2 * (12 * sqrt(n) + 8 * O(diameter)) rounds
-        if merge_clusters(g):  # 7 + 4 * (12 * sqrt(n) + 8 * O(diameter)) rounds
+        if share_cluster_min_edge_and_status(g):  # 3 + 2 * (20 * sqrt(n) + 16 * O(diameter)) rounds
             break
+        merge_clusters(g)  # 7 + 4 * (20 * sqrt(n) + 16 * O(diameter)) rounds
         if visualization:
             g.plot(show=False, fps=fps, group_to_color=True, follow_lead_to_border=True)
     if visualization:
         g.plot(show=True, group_to_color=True)
-    assert g.rounds <= start_round + 8 * (log2(g.size()) * (17 + 54 * g.Odiameter + 76 * isqrt(g.size())))
-    return (g.rounds - start_round) / (log2(g.size()) * (17 + 54 * g.Odiameter + 76 * isqrt(g.size())))
+    assert g.rounds <= start_round + 8 * (log2(g.size()) * (17 + 102 * g.Odiameter + 124 * isqrt(g.size())))
+    return (g.rounds - start_round) / (log2(g.size()) * (17 + 102 * g.Odiameter + 124 * isqrt(g.size())))
 
 
 def validate_mst(g: CongestGraph, print_size=True):

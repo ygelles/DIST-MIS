@@ -22,8 +22,10 @@ class Node:
         self.cluster_up_queue = []
         self.cluster_down_queue = []
         self.messages = []
+        self.bfs_root_messages = []
         self.sub_tree_size = 1
         self.min_edge = None
+        self.status = {}
 
     def add_neighbor(self, neighbor):
         self.neighbors.add(neighbor)
@@ -147,13 +149,14 @@ class Graph:
         for node in self.nodes:
             node.messages = []
             node.cluster_messages = []
+            node.bfs_root_messages = []
             node.cluster_up_queue = []
             node.cluster_down_queue = []
             node.bfs_up_queue = []
             node.bfs_down_queue = []
 
     def get_nodes(self):
-        self.rounds +=1
+        self.rounds += 1
         return self.nodes
 
     def get_node(self, idx):

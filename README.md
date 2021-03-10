@@ -11,14 +11,14 @@
 1. init each node as cluster with same id like the node
 1. while there is out edge from the cluster (exists more than 1 cluster):
     1. for each node find local out edge
-    1. if cluster size is bigger than sqrt(|V|) send the minimum edge to cluster leader throw the BFS tree, else send it throw the cluster nodes
-    1. cluster leader find the global cluster minimum edge and also choose randomly if he is a follower or leader and send it to all cluster nodes (like in 4.ii)
+    1. if cluster size is bigger than sqrt(|V|) send the minimum edge to BFS root throw the BFS tree, else send it to cluster leader throw the cluster nodes also in large a cluster the leader also send if he is a follower or leader (randomly) to BFS root
+    1. BFS/cluster leader find the global cluster minimum edge and send it to all cluster nodes and also the follower/leader status (like in 4.ii)
     1. all nodes that is part of cluster minimum edge, and they are also followers notice to the second node in the edge that they are want to merge (and provide there cluster size)
-    1. all nodes that they are leader and get the above message forward those message to the cluster leader (like in 4.ii)
-    1. the cluster leader calculate the new cluster size and send it (like in 4.ii) to all cluster nodes
+    1. all nodes that they are leader and get the above message forward those message to the BFS/cluster leader (like in 4.ii)
+    1. the BFS/cluster leader calculate the new cluster size and send it (like in 4.ii) to all cluster nodes
     1. the cluster nodes update there size and forward the message to the follower nodes that want to merge
-    1. those follower nodes forward the message (like in 4.ii) to cluster leader
-    1. the cluster leader send the message (like in 4.ii) to all nodes in cluster
+    1. those follower nodes forward the message (like in 4.ii) to BFS/cluster leader
+    1. the BFS/cluster leader send the message (like in 4.ii) to all nodes in cluster
     1. all nodes update there cluster and cluster size
 
 ## example with visualization:
