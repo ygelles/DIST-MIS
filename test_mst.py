@@ -4,7 +4,7 @@ from CongestGraph import CongestGraph
 if __name__ == '__main__':
     num_of_iter = 50
     test_types = ['ll', 'st', 'rc 3', 'rc 5', 'rc 7', 'rc 10', 'rc 20']
-    for n in []:#[5, 10, 20, 50, 100, 200]:
+    for n in [5, 10, 20, 50, 100, 200]:
         print('start with n: {}, test types: {}, num of iteration: {}'.format(n, len(test_types), num_of_iter - (n // 5)))
         for test_type in test_types:
             print('test type:', test_type)
@@ -27,7 +27,7 @@ if __name__ == '__main__':
     res = []
     res2 = []
     for graph_size, tests in [(33, 30), (64, 25), (50, 25), (70, 20), (100, 10), (200, 10), (250, 10), (300, 5),
-                              (500, 5)]:
+                              (500, 5), (1000, 1)]:
         small_res = []
         print('*************************************************************************')
         print(graph_size)
